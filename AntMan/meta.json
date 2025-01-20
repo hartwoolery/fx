@@ -1,0 +1,8 @@
+{
+    "name" : "Ant-Man",
+    "description" : "Scale objects up or down",
+    "author" : "SlapFX",
+    "version" : "0.0.1",
+    "fx" : "AntMan.py",
+    "icon" : "icon.jpeg"
+}

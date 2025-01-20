@@ -1,0 +1,8 @@
+{
+    "name" : "Copy Pasta",
+    "description" : "Clone and scale objects",
+    "author" : "SlapFX",
+    "version" : "0.0.1",
+    "fx" : "CopyPasta.py",
+    "icon" : "icon.jpeg"
+}

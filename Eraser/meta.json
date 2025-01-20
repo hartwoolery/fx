@@ -1,0 +1,8 @@
+{
+    "name" : "Eraser",
+    "description" : "Erase and inpaint objects",
+    "author" : "SlapFX",
+    "version" : "0.0.1",
+    "fx" : "Eraser.py",
+    "icon" : "icon.jpg"
+}

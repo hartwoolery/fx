@@ -1,0 +1,8 @@
+{
+    "name" : "Masking Tape",
+    "description" : "Mask or reverse-mask anything",
+    "author" : "SlapFX",
+    "version" : "0.0.1",
+    "fx" : "MaskingTape.py",
+    "icon" : "icon.jpg"
+}

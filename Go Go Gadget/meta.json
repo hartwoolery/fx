@@ -1,0 +1,8 @@
+{
+    "name" : "Go Go Gadget",
+    "description" : "Reach the top shelf",
+    "author" : "SlapFX",
+    "version" : "0.0.1",
+    "fx" : "GoGoGadget.py",
+    "icon" : "icon.jpg"
+}

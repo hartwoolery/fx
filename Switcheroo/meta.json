@@ -1,0 +1,8 @@
+{
+    "name" : "Switcheroo",
+    "description" : "Replace one object with another",
+    "author" : "SlapFX",
+    "version" : "0.0.1",
+    "fx" : "Switcheroo.py",
+    "icon" : "icon.jpeg"
+}

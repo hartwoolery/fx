@@ -1,0 +1,8 @@
+{
+    "name" : "Mo-Caption",
+    "description" : "Captions that follow object motion",
+    "author" : "SlapFX",
+    "version" : "0.0.1",
+    "fx" : "MoCaption.py",
+    "icon" : "icon.jpeg"
+}
