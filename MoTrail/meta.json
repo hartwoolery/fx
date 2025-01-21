@@ -1,0 +1,8 @@
+{
+    "name" : "MoTrail",
+    "description" : "Create motion trails behind object movement",
+    "author" : "SlapFX",
+    "version" : "0.0.1",
+    "fx" : "MoTrail.py",
+    "icon" : "icon.jpg"
+}

@@ -1,0 +1,8 @@
+{
+    "name" : "Pixelate",
+    "description" : "Pixelate objects in the scene",
+    "author" : "SlapFX",
+    "version" : "0.0.1",
+    "fx" : "Pixelate.py",
+    "icon" : "icon.jpg"
+}
