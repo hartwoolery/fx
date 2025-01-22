@@ -7,7 +7,7 @@ class MoTrail(FX):
     def setup(self):
         self.requires_mask = True  # if your fx requires segmentation of objects
         self.requires_inpainting = False  # if your fx requires inpainting of objects
-        self.trail_length = 50
+        
         self.buffer = np.zeros((*self.api.get_resolution(), 4), dtype=np.uint8)  # Create an empty nparray with alpha channel
 
     def get_custom_inspector(self):
@@ -24,8 +24,7 @@ class MoTrail(FX):
                 "type": "checkbox",
                 "default": True,
                 "text": "Enable Motion Trail",
-                "action": self.set_enable_trail,
-                "get_value": lambda: self.current_sprite().get_meta("enable_trail", True)
+                "sprite_meta": "enable_trail"
             },
             {
                 "show_for": "all",
@@ -33,21 +32,29 @@ class MoTrail(FX):
                 "type": "slider",
                 "min": 1,
                 "max": 99,
-                "default": self.trail_length,
-                "action": self.set_trail_length,
-                "get_value": lambda: self.trail_length
+                "default": 50,
+                "meta": "trail_length"
+            },
+            {
+                "show_for": "all",
+                "label": "Trail Color",
+                "type": "color_picker",
+                "default": None,
+                "sprite_meta": "trail_color"
+            },
+            {
+                "show_for": "all",
+                "type": "dropdown",
+                "label": "Trail Blend",
+                "options": ["Normal", "Additive", "Subtractive", "Multiply", "Screen", "Overlay", "Darken", "Lighten", "Color Dodge", "Color Burn", "Hard Light", "Soft Light", "Difference", "Exclusion", "Hue", "Saturation", "Color", "Luminosity"],
+                "default": "Normal",
+                "sprite_meta": "trail_blend"
             }
+            
 
         ]
     
 
-    def set_enable_trail(self, value, finished:bool=False):
-        self.current_sprite().set_meta("enable_trail", value)
-        self.refresh_frame()
-    
-    def set_trail_length(self, value, finished:bool=False):
-        self.trail_length = value
-        self.refresh_frame()
     def clear_buffer(self):
         self.buffer = np.zeros((*self.api.get_resolution(), 4), dtype=np.uint8)
 
@@ -57,7 +64,8 @@ class MoTrail(FX):
         if frame_info.index == 0:
             self.clear_buffer()
         else:
-            self.buffer[..., 3] = (self.buffer[..., 3] * (0.6 + self.trail_length / 250)).astype(np.uint8)
+            fade_factor = 0.6 + self.get_meta("trail_length", 50) / 250
+            self.buffer[..., 3] = (self.buffer[..., 3] * fade_factor).astype(np.uint8)
 
 
         original_frame = frame_info.frame.copy()
@@ -66,10 +74,17 @@ class MoTrail(FX):
         for sprite in self.sprite_manager.sprites:
             enable_trail = sprite.get_meta("enable_trail", True)
             frame_info.override_buffer = self.buffer if enable_trail else None
-            color = (255, 0, 255)
-            frame_info.frame[:] = color 
-            sprite.render(frame_info)
+            trail_color = sprite.get_meta("trail_color", None)
+        
+            if trail_color is not None:
+                frame_info.frame[:] = trail_color 
+            else:
+                frame_info.frame = original_frame
             
+            original_blend = sprite.blend_mode
+            sprite.blend_mode = sprite.get_meta("trail_blend", "Normal")
+            sprite.render(frame_info)
+            sprite.blend_mode = original_blend
             
 
         ImageUtils.blend(frame_info.render_buffer, self.buffer, Vector(0,0), centered=False, blend_mode="normal")

@@ -5,7 +5,7 @@ from fx_api.fx import FX, FrameInfo
 class Pixelate(FX):
     def setup(self):
         self.requires_mask = True # if your fx requires segmentation of objects
-        self.requires_inpainting = False # if your fx requires inpainting of objects
+        self.requires_inpainting = True # if your fx requires inpainting of objects
 
     def get_custom_inspector(self):
         return [
@@ -17,46 +17,74 @@ class Pixelate(FX):
             },
             {
                 "show_for": "all",
+                "label": "Inpaint",
+                "type": "checkbox",
+                "default": True,
+                "text": "Use Inpainting",
+                "sprite_meta": "use_inpaint"
+            },
+            {
+                "show_for": "all",
                 "label": "Pixel Size",
                 "type": "slider",
                 "min": 1,
                 "max": 30,
-                "action": self.set_pixel_size,
-                "get_value": lambda: self.current_sprite().get_meta("pixel_size", 1)
+                "default": 15,
+                "sprite_meta": "pixel_size"
+            },
+            {
+                "show_for": "all",
+                "label": "Expand Mask",
+                "type": "slider",
+                "min": 0,
+                "max": 100,
+                "default": 10,
+                "sprite_meta": "expansion"
             },
             {
                 "show_for": "all",
                 "label": "Pixel Color",
                 "type": "color_picker",
                 "default": None,
-                "action": self.change_pixel_color,
-                "get_value": lambda: self.current_sprite().get_meta("pixel_color", None)
+                "sprite_meta": "pixel_color"
             }
         ]
-    
-    def set_pixel_size(self, value, finished:bool=False):
-        self.current_sprite().set_meta("pixel_size", value)
-        self.refresh_frame()
 
-    def change_pixel_color(self, color):
-        self.current_sprite().set_meta("pixel_color", color)
-        self.refresh_frame()
+        
+    # override to not show inpainting by default
+    def render_background(self, frame_info: FrameInfo):
+        pixelate = False
+        for sprite in self.sprite_manager.sprites:
+            pixel_size = sprite.get_meta("pixel_size", 1)
+            use_inpaint = sprite.get_meta("use_inpaint", True)
+            if pixel_size > 1 and use_inpaint:
+                pixelate = True
+        
+        if pixelate:
+            frame_info.render_buffer = self.api.get_inpainting(frame_info)
+        else:
+            frame_info.render_buffer = frame_info.frame.copy()
 
 
     def render_frame(self, frame_info: FrameInfo):
         #super().render_frame(frame_info)
 
-        pixel_size = self.current_sprite().get_meta("pixel_size", 1)
-        pixel_color = self.current_sprite().get_meta("pixel_color", None)
 
 
         for sprite in self.sprite_manager.sprites:
+
+            pixel_size = sprite.get_meta("pixel_size", 1)
+            pixel_color = sprite.get_meta("pixel_color", None)
             if pixel_size > 1:
                 bbox = sprite.bbox
-                if (bbox[2] - bbox[0] == 0) or (bbox[3] - bbox[1] == 0):
+                expansion = sprite.get_meta("expansion", 10)
+                original_width = bbox[2] - bbox[0]
+                original_height = bbox[3] - bbox[1]
+                if original_width == 0 or original_height == 0:
                     continue
                 # Expand the bounding box by a small margin
-                margin = 5  # Adjust this value as needed
+                margin = int(expansion * original_width / 100)   # Adjust this value as needed
+             
                 expanded_bbox = (
                     max(bbox[0] - margin, 0),  # x1, clipped to 0
                     max(bbox[1] - margin, 0),  # y1, clipped to 0
@@ -68,28 +96,67 @@ class Pixelate(FX):
                 sprite.bbox = expanded_bbox
                 width = expanded_bbox[2] - expanded_bbox[0]
                 height = expanded_bbox[3] - expanded_bbox[1]
+                use_inpaint = sprite.get_meta("use_inpaint", True)
+                if use_inpaint:
+                    frame_crop = self.api.get_inpainting(frame_info)
+                else:
+                    frame_crop = frame_info.frame.copy()
                 
+                frame_crop = frame_crop[expanded_bbox[1]:expanded_bbox[3], expanded_bbox[0]:expanded_bbox[2]]
+                mask_crop = np.ones((height, width), dtype=np.uint8)
                 if sprite.mask is not None:
                     mask_crop = sprite.mask.copy().astype(np.uint8)[expanded_bbox[1]:expanded_bbox[3], expanded_bbox[0]:expanded_bbox[2]]
-                    # Pixelate the mask
-                    kernel = np.ones((3, 3), np.uint8)  # Create a 3x3 kernel for dilation
-                    mask_crop = cv2.dilate(mask_crop, kernel, iterations=1)  # Dilate the mask crop
-
+                   
+                    mask_crop = cv2.dilate(mask_crop, cv2.getStructuringElement(cv2.MORPH_CROSS, (5, 5)), iterations=int(expansion / 2))
+            
                     mask_crop = cv2.resize(mask_crop, (0, 0), fx=1/pixel_size, fy=1/pixel_size, interpolation=cv2.INTER_NEAREST)
                     mask_crop = cv2.resize(mask_crop, (width,height), interpolation=cv2.INTER_NEAREST)
                     sprite.mask[expanded_bbox[1]:expanded_bbox[3], expanded_bbox[0]:expanded_bbox[2]] = mask_crop
 
-                frame_crop = frame_info.frame[expanded_bbox[1]:expanded_bbox[3], expanded_bbox[0]:expanded_bbox[2]]
+                if pixel_color is not None:
+                    # Convert the frame_crop to HSV color space
+                    hsv_frame_crop = cv2.cvtColor(frame_crop, cv2.COLOR_BGR2HSV)
+                    
+                    # Calculate the average V value in the masked area
+                    # masked_v_values = hsv_frame_crop[mask_crop > 0, 2]
+                    # average_v = np.mean(masked_v_values) if masked_v_values.size > 0 else 0
+
+                    # Create a new color in HSV with the same H and S as pixel_color, but with the average V
+                    pixel_color_hsv = cv2.cvtColor(np.uint8([[pixel_color]]), cv2.COLOR_BGR2HSV)[0][0]
+                    
+                    
+                    # Convert back to BGR color space
+                    new_pixel_color = cv2.cvtColor(np.uint8([[pixel_color_hsv]]), cv2.COLOR_HSV2BGR)[0][0]
+                    # Calculate the new V value for the recolored pixels
+                    new_pixel_color_v = pixel_color_hsv[2]
+                    # recolored_v = hsv_frame_crop[..., 2] - average_v + new_pixel_color_v
+                    # recolored_v = np.clip(recolored_v, 0, 255)  # Ensure V values are within valid range
+                    noise = np.random.normal(-10, 10, hsv_frame_crop[..., 2].shape)  # Generate noise
+                    recolored_v = new_pixel_color_v + noise  # Add noise to the new V value
+                    recolored_v = np.clip(recolored_v, 0, 255)  # Ensure V values are within valid range
+
+                    # Create a new HSV image with the modified V channel
+                    recolored_hsv_frame_crop = hsv_frame_crop.copy()
+                    recolored_hsv_frame_crop[..., 2] = recolored_v
+                    recolored_hsv_frame_crop[..., 1] = pixel_color_hsv[1]
+                    recolored_hsv_frame_crop[..., 0] = pixel_color_hsv[0]
+
+                    # Convert back to BGR color space
+                    recolored_frame_crop = cv2.cvtColor(recolored_hsv_frame_crop, cv2.COLOR_HSV2BGR)
+                    
+                    # Change the color of the pixels inside the masked area
+                    mask_indices = np.where(mask_crop > 0)
+                    frame_crop[mask_indices] = recolored_frame_crop[mask_indices]
+                
+                    
+
+                   
+
+                    
                 
                 # Pixelate the frame
                 frame_crop = cv2.resize(frame_crop, (0, 0), fx=1/pixel_size, fy=1/pixel_size, interpolation=cv2.INTER_NEAREST)
-                if pixel_color is not None:
-                    hsv_color = cv2.cvtColor(np.uint8([[pixel_color]]), cv2.COLOR_BGR2HSV)[0][0]  # Convert pixel color to HSV
-                    # Create a random noise array for the V channel
-                    noise = np.random.randint(-20, 20, size=frame_crop.shape[:2], dtype=np.int16)  # Generate random noise for V channel
-                    hsv_frame = np.full_like(frame_crop, hsv_color, dtype=np.uint8)  # Create an HSV frame with the base color
-                    hsv_frame[..., 2] = np.clip(hsv_frame[..., 2] + noise, 0, 255)  # Modify V channel with noise
-                    frame_crop = cv2.cvtColor(hsv_frame, cv2.COLOR_HSV2BGR)  # Convert back to BGR
+                
                 frame_crop = cv2.resize(frame_crop, (width, height), interpolation=cv2.INTER_NEAREST)
 
                 

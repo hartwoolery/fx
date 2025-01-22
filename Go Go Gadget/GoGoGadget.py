@@ -144,8 +144,7 @@ class GoGoGadget(FX):
                 "label": "Enable Links",
                 "type": "checkbox",
                 "default": True,
-                "action": self.enable_links,
-                "get_value": lambda: self.current_sprite().get_meta("enable_links", True)
+                "sprite_meta": "enable_links"
             },
             {
                 "show_for": "all",
@@ -154,19 +153,9 @@ class GoGoGadget(FX):
                 "min": 1,
                 "max": 99,
                 "default": self.default_link_size,
-                "action": self.set_link_size,
-                "get_value": lambda: self.current_sprite().get_meta("link_size", self.default_link_size)
+                "sprite_meta": "link_size"
             }
         ]
-    
-
-    def enable_links(self, value):
-        self.current_sprite().set_meta("enable_links", value)
-        self.refresh_frame()
-
-    def set_link_size(self, value, finished=False):
-        self.current_sprite().set_meta("link_size", value)
-        self.refresh_frame()
 
     def render_frame(self, frame_info: FrameInfo):
         # Get all sprites from sprite manager
