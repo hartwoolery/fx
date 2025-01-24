@@ -8,7 +8,10 @@ class MoTrail(FX):
         self.requires_mask = True  # if your fx requires segmentation of objects
         self.requires_inpainting = False  # if your fx requires inpainting of objects
         
-        self.buffer = np.zeros((*self.api.get_resolution(), 4), dtype=np.uint8)  # Create an empty nparray with alpha channel
+        res = self.api.get_resolution()
+        self.buffer = np.zeros((res[1], res[0], 4), dtype=np.uint8)  # Create an empty nparray with alpha channel
+
+    
 
     def get_custom_inspector(self):
         return [
@@ -56,7 +59,8 @@ class MoTrail(FX):
     
 
     def clear_buffer(self):
-        self.buffer = np.zeros((*self.api.get_resolution(), 4), dtype=np.uint8)
+        res = self.api.get_resolution()
+        self.buffer = np.zeros((res[1], res[0], 4), dtype=np.uint8)  # Create an empty nparray with alpha channel
 
     def render_frame(self, frame_info: FrameInfo):
         #super().render_frame(frame_info)
@@ -66,7 +70,6 @@ class MoTrail(FX):
         else:
             fade_factor = 0.6 + self.get_meta("trail_length", 50) / 250
             self.buffer[..., 3] = (self.buffer[..., 3] * fade_factor).astype(np.uint8)
-
 
         original_frame = frame_info.frame.copy()
         
@@ -85,6 +88,8 @@ class MoTrail(FX):
             sprite.blend_mode = sprite.get_meta("trail_blend", "Normal")
             sprite.render(frame_info)
             sprite.blend_mode = original_blend
+
+            
             
 
         ImageUtils.blend(frame_info.render_buffer, self.buffer, Vector(0,0), centered=False, blend_mode="normal")
@@ -93,6 +98,8 @@ class MoTrail(FX):
         for sprite in self.sprite_manager.sprites:
             frame_info.override_buffer = None
             sprite.render(frame_info)
+
+        
 
 
 

@@ -1,0 +1,8 @@
+{
+    "name" : "Edgy",
+    "description" : "Make glowing edges around objects",
+    "author" : "SlapFX",
+    "version" : "0.0.1",
+    "fx" : "Edgy.py",
+    "icon" : "icon.jpg"
+}
