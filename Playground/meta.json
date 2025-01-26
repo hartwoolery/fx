@@ -1,0 +1,8 @@
+{
+    "name" : "Playground",
+    "description" : "Hover and click 'Edit' to change the code",
+    "author" : "SlapFX",
+    "version" : "0.0.1",
+    "fx" : "Playground.py",
+    "icon" : "icon.jpg"
+}

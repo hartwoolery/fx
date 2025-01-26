@@ -10,35 +10,23 @@ class Edgy(FX):
         self.requires_inpainting = True # if your fx requires inpainting of objects
 
         glow_shader = r"""
-        uniform sampler2D u_texture;
-        uniform sampler2D u_mask;
         uniform sampler2D u_blurredMask;
         uniform float u_glow_strength;
         uniform vec3 u_glow_color;
 
         void main() {
-            vec4 baseColor = texture(u_texture, fragCoord);
-            float maskVal = texture(u_mask, fragCoord).r;
-            float blurredVal = texture(u_blurredMask, fragCoord).r;
+            vec2 uv = fragCoord.xy;
+            float blurredVal = texture(u_blurredMask, uv).r;
 
-            baseColor.a = blurredVal;
             vec4 glowColor = vec4(u_glow_color/(1.1-blurredVal), 1.0);
-            vec4 bloom = glowColor * blurredVal * u_glow_strength;
-            fragColor = baseColor + bloom;
-            if (maskVal == 1.0) {
-                fragColor.a = 0.0;// baseColor;
-            }
-            
-            // (Optional) If you want the object itself to remain un-bloomed in the center,
-            // or do some custom mix inside vs outside the mask, you can do further logic here.
-            
+            vec4 bloom = glowColor * blurredVal * u_glow_strength * 0.1;
+            fragColor = bloom;
+            fragColor.a = blurredVal;
         }
         """
 
         self.api.set_fragment_shader(glow_shader)
 
-        res = self.api.get_resolution()
-        self.buffer = np.zeros((res[1], res[0], 4), dtype=np.uint8)  # Create an empty nparray with alpha channel
 
     def on_ready(self):
         super().on_ready()
@@ -79,70 +67,102 @@ class Edgy(FX):
                 "default": 20,
                 "sprite_meta": "blur_radius"
             },
-       
+            {
+                "show_for": "all",
+                "type": "slider",
+                "label": "Trail Length",
+                "min": 1,
+                "max": 100,
+                "default": 50,
+                "meta": "trail_length"
+            }
         ]
     
-
-    def clear_buffer(self):
+    def clear_buffer(self, sprite):
         res = self.api.get_resolution()
-        self.buffer = np.zeros((res[1], res[0], 4), dtype=np.uint8)
-        
-    
+        sprite.buffer = np.zeros((res[1], res[0], 3), dtype=np.uint8)
 
+    def get_buffer(self, sprite):
+        if not hasattr(sprite, "buffer"):
+            self.clear_buffer(sprite)
+        return sprite.buffer
+        
+
+    def combine_masks(self, mask1, mask2):
+        # Step 1: Combine the masks
+        combined_mask = cv2.bitwise_or(mask1[..., 0], mask2[..., 0])
+
+        # Step 2: Find contours of the combined mask
+        contours, _ = cv2.findContours(combined_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        # Step 3: Compute the convex hull of all contours
+        if contours:
+            all_points = np.vstack([point for contour in contours for point in contour])
+            convex_hull = cv2.convexHull(all_points)
+            # Step 4: Draw the convex hull on a new mask
+            convex_mask = np.zeros_like(combined_mask)
+            cv2.drawContours(convex_mask, [convex_hull], -1, 255, thickness=cv2.FILLED)
+        else:
+            convex_hull = np.array([])  # Handle empty contour case
+            convex_mask = combined_mask
+
+        
+        
+        # Apply Gaussian blur to the mask, not the contour
+        smooth_contour = cv2.GaussianBlur(convex_mask, (5, 5), 0)
+        
+        gray = cv2.cvtColor(smooth_contour, cv2.COLOR_GRAY2BGR)
+
+        return gray
+    
     def render_frame(self, frame_info: FrameInfo):
         
-        if frame_info.index == 0:
-            self.clear_buffer()
-        else:
-            fade_factor = 0.6 + self.get_meta("trail_length", 50) / 250
-            self.buffer[..., 3] = (self.buffer[..., 3] * fade_factor).astype(np.uint8)
+        
 
         original_frame = frame_info.frame.copy()
-        print(frame_info.frame.shape, "frame_info.frame.shape")
         for sprite in self.sprite_manager.sprites:
             if sprite.mask is None:
                 continue
+            
+            buffer = self.get_buffer(sprite)
+
+            if frame_info.index == 0:
+                self.clear_buffer(sprite)
+            else:
+                fade_factor = self.get_meta("trail_length", 50) / 100
+                buffer = (buffer * fade_factor).astype(np.uint8)
 
             glow_strength = sprite.get_meta("glow_strength", 10)
             glow_color = sprite.get_meta("glow_color", (100, 255, 50))
             blur_radius = sprite.get_meta("blur_radius", 20)
+            
             mask = sprite.get_mask_image()
+
+            if frame_info.index > 0:
+                prev_frame = frame_info.index - 1
+                prev_mask = self.api.get_mask_image(prev_frame, sprite.object_info.id)
+                if prev_mask is not None:
+                    mask = self.combine_masks(mask, prev_mask)
+            
             blurred_mask = cv2.GaussianBlur(mask, (0, 0), int(blur_radius/4)+1)
             
-            #enable_trail = sprite.get_meta("enable_trail", True)
-            #frame_info.override_buffer = self.buffer if enable_trail else None
-            #trail_color = sprite.get_meta("trail_color", None)
-        
-            # if trail_color is not None:
-            #     frame_info.frame[:] = trail_color 
-            # else:
-            #     frame_info.frame = original_frame
-            
-            # original_blend = sprite.blend_mode
-            # sprite.blend_mode = sprite.get_meta("trail_blend", "Normal")
-            # sprite.render(frame_info)
-            # sprite.blend_mode = original_blend
+
+            ImageUtils.blend(buffer, blurred_mask, blend_mode="add")
+
             uniforms = {
-                "u_texture": frame_info.frame,
-                "u_mask": mask,
-                "u_blurredMask": blurred_mask,
+                "u_blurredMask": buffer,
                 "u_glow_strength": glow_strength, 
                 "u_glow_color": glow_color
             }
             new_buffer = self.api.render_shader(uniforms)
 
 
-            if new_buffer is not None:
-                ImageUtils.blend(self.buffer, new_buffer)
+            ImageUtils.blend(frame_info.render_buffer, new_buffer, blend_mode="normal")
                 
-                #ImageUtils.blend(frame_info.render_buffer, new_buffer)
         
 
-        ImageUtils.blend(frame_info.render_buffer, self.buffer)
-
-        frame_info.frame = original_frame
+        #frame_info.frame = original_frame
         for sprite in self.sprite_manager.sprites:
-            frame_info.override_buffer = None
             sprite.render(frame_info)
 
         

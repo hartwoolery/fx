@@ -2,6 +2,7 @@ import numpy as np
 import cv2
 from fx_api.fx import FX, FrameInfo
 from fx_api.utils.vector import Vector
+from fx_api.utils.image import ImageUtils
 
 class AntMan(FX):
     def setup(self):
@@ -21,6 +22,10 @@ class AntMan(FX):
 
     def render_frame(self, frame_info: FrameInfo):
         super().render_frame(frame_info)
+        # new_tex = self.api.render_shader({
+        #     "texSampler": frame_info.frame
+        # })
+        # ImageUtils.blend(frame_info.render_buffer, new_tex)
     
     def get_custom_inspector(self):
         return [

@@ -49,7 +49,7 @@ class MoTrail(FX):
                 "show_for": "all",
                 "type": "dropdown",
                 "label": "Trail Blend",
-                "options": ["Normal", "Additive", "Subtractive", "Multiply", "Screen", "Overlay", "Darken", "Lighten", "Color Dodge", "Color Burn", "Hard Light", "Soft Light", "Difference", "Exclusion", "Hue", "Saturation", "Color", "Luminosity"],
+                "options": ["Normal", "Add", "Subtract", "Multiply", "Screen", "Overlay", "Darken", "Lighten", "Color Dodge", "Color Burn", "Hard Light", "Soft Light", "Difference", "Exclusion", "Hue", "Saturation", "Color", "Luminosity"],
                 "default": "Normal",
                 "sprite_meta": "trail_blend"
             }

@@ -42,16 +42,18 @@ class MaskingTape(FX):
         if bg_color:
             frame_info.render_buffer[:] = np.array(bg_color)
         
+        original_frame = frame_info.frame.copy()
         for sprite in self.sprite_manager.sprites:
             if sprite.type == "cutout":
                 color = sprite.get_meta("foreground_color", None)
                 
                 if color is not None:
-                    frame_info.frame = frame_info.frame.copy()
+                    frame_info.frame = original_frame.copy()
                     frame_info.frame[:] = color  # Fill the entire frame with the foreground color
        
               
             
             sprite.render(frame_info)
+            frame_info.frame = original_frame.copy()
 
     
