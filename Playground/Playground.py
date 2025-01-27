@@ -23,10 +23,11 @@ class Playground(FX):
         """
 
         self.api.set_fragment_shader(grayscale_shader)
+   
 
     # called when the fx is ready
     def on_ready(self):
-        super().on_ready()
+        super().on_ready() 
 
     def render_frame(self, frame_info: FrameInfo):
         super().render_frame(frame_info)
@@ -42,7 +43,7 @@ class Playground(FX):
         ImageUtils.blend(frame_info.render_buffer, new_tex, position=Vector(0,0), centered=False, blend_mode="normal")
     
     # below function customizes the inspector UI, see example_ui for the format
-    
+      
     example_ui = r"""
     { 
         "always_showing": bool, # if true, the UI element will always be shown regardless of whether a sprite is selected
