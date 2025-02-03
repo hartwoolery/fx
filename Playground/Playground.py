@@ -65,75 +65,76 @@ class Playground(FX):
     """
     
     def get_custom_inspector(self):
+        
         return [
-            {
-                "always_showing": True,
-                "type": "info",
-                "label": "Info",
-                "text": "The playground is a sandbox for testing new features and ideas."
-            },
-            {
-                "show_for": "all",
-                "label": "Segmented",
-                "type": "segmented_control",
-                "default": 1,
-                "segments": ["1", "2", "3"],
-                "sprite_meta": "segmented"
-            },
-            {
-                "show_for": "all",
-                "type": "slider",
-                "label": "Slider",
-                "min": 0,
-                "max": 100,
-                "default": 50,
-                "sprite_meta": "slider"
-            },
-            {
-                "show_for": "all",
-                "type": "number_input",
-                "label": "Number",
-                "min": 0,
-                "max": 100,
-                "default": 50,
-                "sprite_meta": "number"
-            },
-            {
-                "show_for": "all",
-                "type": "font",
-                "label": "Font",
-                "text": "Choose A Font",
-                "sprite_meta": "font"
-            },
-            {
-                "show_for": "all",
-                "type": "button",
-                "label": "Button",
-                "text": "Click Me",
-                "sprite_meta": "button"
-            },
-            {
-                "show_for": "all",
-                "type": "text_input",
-                "label": "Text",
-                "text": "Enter Text",
-                "sprite_meta": "text"
-            },
-            {
-                "show_for": "all",
-                "type": "checkbox",
-                "label": "Checkbox",
-                "default": True,
-                "sprite_meta": "checkbox"
-            },
-            {
-                "show_for": "all",
-                "type": "dropdown",
-                "label": "Dropdown",
-                "default": "Option 1",
-                "options": ["Option 1", "Option 2", "Option 3"],
-                "sprite_meta": "dropdown"
-            }
+            # {
+            #     "always_showing": True,
+            #     "type": "info",
+            #     "label": "Info",
+            #     "text": "The playground is a sandbox for testing new features and ideas."
+            # },
+            # {
+            #     "show_for": "all",
+            #     "label": "Segmented",
+            #     "type": "segmented_control",
+            #     "default": 1,
+            #     "segments": ["1", "2", "3"],
+            #     "sprite_meta": "segmented"
+            # },
+            # {
+            #     "show_for": "all",
+            #     "type": "slider",
+            #     "label": "Slider",
+            #     "min": 0,
+            #     "max": 100,
+            #     "default": 50,
+            #     "sprite_meta": "slider"
+            # },
+            # {
+            #     "show_for": "all",
+            #     "type": "number_input",
+            #     "label": "Number",
+            #     "min": 0,
+            #     "max": 100,
+            #     "default": 50,
+            #     "sprite_meta": "number"
+            # },
+            # {
+            #     "show_for": "all",
+            #     "type": "font",
+            #     "label": "Font",
+            #     "text": "Choose A Font",
+            #     "sprite_meta": "font"
+            # },
+            # {
+            #     "show_for": "all",
+            #     "type": "button",
+            #     "label": "Button",
+            #     "text": "Click Me",
+            #     "sprite_meta": "button"
+            # },
+            # {
+            #     "show_for": "all",
+            #     "type": "text_input",
+            #     "label": "Text",
+            #     "text": "Enter Text",
+            #     "sprite_meta": "text"
+            # },
+            # {
+            #     "show_for": "all",
+            #     "type": "checkbox",
+            #     "label": "Checkbox",
+            #     "default": True,
+            #     "sprite_meta": "checkbox"
+            # },
+            # {
+            #     "show_for": "all",
+            #     "type": "dropdown",
+            #     "label": "Dropdown",
+            #     "default": "Option 1",
+            #     "options": ["Option 1", "Option 2", "Option 3"],
+            #     "sprite_meta": "dropdown"
+            # }
         ]
     
         
