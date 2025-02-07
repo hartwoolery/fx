@@ -55,7 +55,7 @@ class Edgy(FX):
                 "label": "Glow Strength",
                 "min": 0,
                 "max": 100,
-                "default": 10,
+                "default": 50,
                 "sprite_meta": "glow_strength"
             },
             {
@@ -64,18 +64,18 @@ class Edgy(FX):
                 "label": "Blur Radius",
                 "min": 1,
                 "max": 100,
-                "default": 20,
+                "default": 50,
                 "sprite_meta": "blur_radius"
             },
-            {
-                "show_for": "all",
-                "type": "slider",
-                "label": "Trail Length",
-                "min": 1,
-                "max": 100,
-                "default": 50,
-                "meta": "trail_length"
-            }
+            # {
+            #     "show_for": "all",
+            #     "type": "slider",
+            #     "label": "Trail Length",
+            #     "min": 1,
+            #     "max": 100,
+            #     "default": 50,
+            #     "meta": "trail_length"
+            # }
         ]
     
     def clear_buffer(self, sprite):
@@ -132,17 +132,18 @@ class Edgy(FX):
                 fade_factor = self.get_meta("trail_length", 50) / 100
                 buffer = (buffer * fade_factor).astype(np.uint8)
 
-            glow_strength = sprite.get_meta("glow_strength", 10)
+            glow_strength = sprite.get_meta("glow_strength", 50)
             glow_color = sprite.get_meta("glow_color", (100, 255, 50))
-            blur_radius = sprite.get_meta("blur_radius", 20)
+            
+            blur_radius = sprite.get_meta("blur_radius", 50)
             
             mask = sprite.get_mask_image()
 
-            if frame_info.index > 0:
-                prev_frame = frame_info.index - 1
-                prev_mask = self.api.get_mask_image(prev_frame, sprite.object_info.id)
-                if prev_mask is not None:
-                    mask = self.combine_masks(mask, prev_mask)
+            # if frame_info.index > 0:
+            #     prev_frame = frame_info.index - 1
+            #     prev_mask = self.api.get_mask_image(prev_frame, sprite.object_info.id)
+            #     if prev_mask is not None:
+            #         mask = self.combine_masks(mask, prev_mask)
             
             blurred_mask = cv2.GaussianBlur(mask, (0, 0), int(blur_radius/4)+1)
             
@@ -152,7 +153,7 @@ class Edgy(FX):
             uniforms = {
                 "u_blurredMask": buffer,
                 "u_glow_strength": glow_strength, 
-                "u_glow_color": glow_color
+                "u_glow_color": glow_color #important to have "color" in the name so it knows to convert from bgr to rgb
             }
             new_buffer = self.api.render_shader(uniforms)
 
